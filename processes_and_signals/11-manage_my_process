@@ -1,56 +1,28 @@
 #!/usr/bin/env bash
-
-# Define the PID file location
-PID_FILE="/var/run/my_process.pid"
-
-# Function to check if process is running
-is_running() {
-  if [[ -f "$PID_FILE" ]]; then
-    local pid
-    pid=$(cat "$PID_FILE")
-    if ps -p "$pid" > /dev/null 2>&1; then
-      return 0  # Process is running
-    else
-      return 1  # Process not running
+#manage 
+if [[ "$#" == "1" ]]; then
+  if [[ "$1" == "start" ]]; then
+    ./manage_my_process &
+    echo "$!" > /var/run/my_process.pid
+    echo "manage_my_process started"
+  elif [[ "$1" == "stop" ]]; then
+    if test -f "/var/run/my_process.pid"; then
+      kill "$(cat /var/run/my_process.pid)"
     fi
-  else
-    return 1  # PID file does not exist
-  fi
-}
-
-case "$1" in
-  start)
-    if is_running; then
-      echo "manage_my_process is already running."
-    else
-      ./manage_my_process &  # Start the process in the background
-      echo "$!" > "$PID_FILE"  # Save PID to file
-      echo "manage_my_process started"
+    rm /var/run/my_process.pid
+    echo "manage_my_process stopped"
+  elif [[ "$1" == "restart" ]]; then
+    # stop program
+    if test -f "/var/run/my_process.pid"; then
+      kill "$(cat /var/run/my_process.pid)"
     fi
-    ;;
-  
-  stop)
-    if is_running; then
-      kill "$(cat "$PID_FILE")" && rm -f "$PID_FILE"
-      echo "manage_my_process stopped"
-    else
-      echo "manage_my_process is not running."
-    fi
-    ;;
-  
-  restart)
-    if is_running; then
-      kill "$(cat "$PID_FILE")" && rm -f "$PID_FILE"
-      echo "manage_my_process stopped"
-    fi
-    ./manage_my_process &  # Restart process
-    echo "$!" > "$PID_FILE"
+    # start program
+    ./manage_my_process &
+    echo "$!" > /var/run/my_process.pid
     echo "manage_my_process restarted"
-    ;;
-  
-  *)
-    echo "Usage: $0 {start|stop|restart}"
-    exit 1
-    ;;
-esac
-
+  else
+    echo "Usage: manage_my_process {start|stop|restart}"
+  fi
+else
+  echo "Usage: manage_my_process {start|stop|restart}"
+fi
